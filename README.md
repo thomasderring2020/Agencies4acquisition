@@ -88,6 +88,16 @@ What a sync does:
 - **Sharing a target**: open an agency and click **Copy link**. The link opens straight to that agency.
 - **Backups**: the data lives in Upstash Redis under keys starting with `mna:`, and the Upstash console can browse and export it.
 
+## Troubleshooting
+
+**"Couldn't load" banner or a 500 error:** while signed in, open `https://<your-site>/api/health`. It shows which database settings the server can see (names only, never the values) and whether the database answers:
+
+- `"storage": "local"`: no database credentials were found. Add `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`), then redeploy.
+- `"database": "error: WRONGPASS…"`: the token is wrong. Copy the **REST token** (not the read-only one) from Upstash.
+- `"database": "error: fetch failed"`: the URL is wrong. Use the **REST URL**, which starts with `https://`.
+
+Environment variable changes only take effect after a **redeploy**.
+
 ## Running it locally (optional)
 
 ```bash

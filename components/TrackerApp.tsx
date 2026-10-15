@@ -56,7 +56,10 @@ export default function TrackerApp() {
         window.location.href = "/login";
         return;
       }
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || `Server error ${res.status}`);
+      }
       setData(await res.json());
       setLoadErr("");
     } catch (e) {
@@ -289,7 +292,12 @@ export default function TrackerApp() {
           {data?.storage === "local" && process.env.NODE_ENV === "production" && (
             <div className="banner">Database not connected — changes won&apos;t be saved. Add Upstash Redis in Vercel (see README).</div>
           )}
-          {loadErr && <div className="banner">Couldn&apos;t load: {loadErr}</div>}
+          {loadErr && (
+            <div className="banner">
+              Couldn&apos;t load: {loadErr} ·{" "}
+              <a href="/api/health" target="_blank" rel="noreferrer">Run setup check</a>
+            </div>
+          )}
           {!data ? (
             <div className="card emptystate"><span className="spin" /></div>
           ) : !agencies.length ? (

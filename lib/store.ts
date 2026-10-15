@@ -37,15 +37,69 @@ const K = {
   notes: (id: string) => `${P}notes:${id}`,
 };
 
+/** Trim whitespace and stray quotes people often paste into env var values. */
+const clean = (v: string | undefined) => (v ?? "").trim().replace(/^['"]+|['"]+$/g, "").trim();
+
+/**
+ * Find Upstash REST credentials. Accepts the Upstash names, the Vercel Marketplace names
+ * (KV_REST_API_*), the same names with any custom prefix Vercel may add (e.g. STORAGE_KV_REST_API_URL),
+ * and as a last resort derives them from an Upstash redis:// connection string.
+ */
+export function findRedisConfig(): { url: string; token: string; from: string } | null {
+  const env = process.env;
+  const keys = Object.keys(env);
+  const pairs: [RegExp, RegExp][] = [
+    [/(^|_)UPSTASH_REDIS_REST_URL$/, /(^|_)UPSTASH_REDIS_REST_TOKEN$/],
+    [/(^|_)KV_REST_API_URL$/, /(^|_)KV_REST_API_TOKEN$/],
+    [/(^|_)REDIS_REST_URL$/, /(^|_)REDIS_REST_TOKEN$/],
+  ];
+  for (const [u, t] of pairs) {
+    const uk = keys.find((k) => u.test(k) && clean(env[k]));
+    const tk = keys.find((k) => t.test(k) && !/READ_ONLY/.test(k) && clean(env[k]));
+    if (uk && tk) {
+      let url = clean(env[uk]);
+      if (!/^https?:\/\//.test(url)) url = `https://${url.replace(/^rediss?:\/\//, "").replace(/:\d+$/, "")}`;
+      return { url: url.replace(/\/+$/, ""), token: clean(env[tk]), from: `${uk} + ${tk}` };
+    }
+  }
+  // Fallback: rediss://default:<token>@<host>.upstash.io:6379 → REST URL + token
+  const ck = keys.find((k) => /(^|_)(KV_URL|REDIS_URL)$/.test(k) && /upstash\.io/.test(clean(env[k])));
+  if (ck) {
+    try {
+      const u = new URL(clean(env[ck]));
+      if (u.password) return { url: `https://${u.hostname}`, token: decodeURIComponent(u.password), from: ck };
+    } catch {
+      /* not a URL */
+    }
+  }
+  return null;
+}
+
+/** Upstash returns HGETALL as a flat [field, value, field, value] list when auto-deserialization is off. */
+function toHash(raw: unknown): Hash {
+  if (!raw) return {};
+  if (Array.isArray(raw)) {
+    const out: Hash = {};
+    for (let i = 0; i + 1 < raw.length; i += 2) out[String(raw[i])] = String(raw[i + 1]);
+    return out;
+  }
+  if (typeof raw === "object") {
+    return Object.fromEntries(
+      Object.entries(raw as Record<string, unknown>).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)])
+    );
+  }
+  return {};
+}
+
 function redisBackend(): Backend | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return null;
+  const cfg = findRedisConfig();
+  if (!cfg) return null;
+  const { url, token } = cfg;
   const r = new Redis({ url, token, automaticDeserialization: false });
   return {
     kind: "redis",
     async hgetall(key) {
-      return ((await r.hgetall(key)) as Hash | null) ?? {};
+      return toHash(await r.hgetall(key));
     },
     async hget(key, field) {
       return ((await r.hget(key, field)) as string | null) ?? null;

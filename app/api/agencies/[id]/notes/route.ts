@@ -1,10 +1,11 @@
+import { safe } from "@/lib/http";
 import { requireAuth } from "@/lib/auth";
 import { store } from "@/lib/store";
 import { actor } from "@/lib/validate";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(req: Request, { params }: Ctx) {
+export const POST = safe("agencies/[id]/notes POST", async (req: Request, { params }: Ctx) => {
   const denied = await requireAuth(req);
   if (denied) return denied;
   const { id } = await params;
@@ -15,4 +16,4 @@ export async function POST(req: Request, { params }: Ctx) {
   const note = { id: crypto.randomUUID(), text, by: actor(body.by), at: new Date().toISOString() };
   await store.addNote(id, note);
   return Response.json(note, { status: 201 });
-}
+});

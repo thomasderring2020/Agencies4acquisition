@@ -1,10 +1,11 @@
+import { safe } from "@/lib/http";
 import { requireAuth } from "@/lib/auth";
 import { store, storageKind } from "@/lib/store";
 import type { AgencyListPayload } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export const GET = safe("agencies GET", async (req: Request) => {
   const denied = await requireAuth(req);
   if (denied) return denied;
   const [agencies, statuses, overrides, meta, counts] = await Promise.all([
@@ -25,4 +26,4 @@ export async function GET(req: Request) {
     sheetConfigured: Boolean(process.env.SHEET_CSV_URL),
   };
   return Response.json(payload);
-}
+});
