@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { geoAlbersUsa, geoPath } from "d3-geo";
-import { feature, mesh } from "topojson-client";
+import { feature, merge, mesh } from "topojson-client";
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from "d3-zoom";
 import "d3-transition";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import statesTopo from "us-atlas/states-albers-10m.json";
+import majorCities from "@/data/major-cities.json";
 import type { Agency, StatusRecord } from "@/lib/types";
 import { effectiveStatus, STATUSES } from "@/lib/types";
 import { midpoint, money, pad2, STATUS_COLOR } from "@/lib/format";
@@ -30,8 +31,21 @@ const STATE_PATHS = STATES_FC.features.map((f) => ({
   fips: String(f.id),
   abbr: byFips[String(f.id)]?.abbr ?? "",
   d: path(f) ?? "",
+  c: path.centroid(f as Feature),
   f,
 }));
+const NATION_D = path(NATION) ?? "";
+// Lower 48 only: used in regional views so the Alaska/Hawaii insets don't crowd the map.
+const INSETS = new Set(["02", "15"]);
+const LOWER48_D =
+  path(merge(topo, topo.objects.states.geometries.filter((g) => !INSETS.has(String(g.id))) as never)) ?? "";
+const BORDERS_D = path(BORDERS) ?? "";
+
+// Reference cities shown once you zoom into a region (tier 1 first, tier 2 when closer).
+type City = { n: string; s: string; lat: number; lng: number; t: number };
+const CITIES = (majorCities as City[])
+  .map((c) => ({ ...c, p: projection([c.lng, c.lat]) }))
+  .filter((c): c is City & { p: [number, number] } => !!c.p);
 
 function regionBounds(region: Region): [[number, number], [number, number]] {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -71,7 +85,7 @@ export default function MapView(props: {
 
   // Track the rendered size so we know exactly which part of the map is visible.
   useEffect(() => {
-    const el = wrapRef.current;
+    const el = svgRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(el);
@@ -144,7 +158,10 @@ export default function MapView(props: {
     const [x, y] = t.apply([m.x, m.y]);
     return { x: x + m.ox, y: y + m.oy };
   };
-  const toPx = (x: number, y: number) => ({ left: (x - vx0) * s, top: (y - vy0) * s });
+  const sr = svgRef.current?.getBoundingClientRect();
+  const wr = wrapRef.current?.getBoundingClientRect();
+  const svgOff = { x: sr && wr ? sr.left - wr.left : 0, y: sr && wr ? sr.top - wr.top : 0 };
+  const toPx = (x: number, y: number) => ({ left: svgOff.x + (x - vx0) * s, top: svgOff.y + (y - vy0) * s });
 
   const zoomToBox = ([[x0, y0], [x1, y1]]: [[number, number], [number, number]], pad = 0.85) => {
     const svg = svgRef.current, z = zoomRef.current;
@@ -174,12 +191,17 @@ export default function MapView(props: {
   const zoomBy = (f: number) => {
     const svg = svgRef.current, z = zoomRef.current;
     if (svg && z) select(svg).transition().duration(300).call(z.scaleBy, f);
+    setRegion(null); // the list now follows whatever is on screen
   };
 
   const center = projection.invert?.([(W / 2 - t.x) / t.k, (H / 2 - t.y) / t.k]);
   const hovered = markers.find((m) => m.a.id === hover);
   const showLabels = t.k >= 2.4;
   const dotScale = 1 / Math.sqrt(t.k);
+  // "Zoomed" = a region button is active or the user has zoomed in by hand.
+  const zoomed = (region !== null && region !== "All") || t.k >= 1.6;
+  // Fade the dot matrix as you zoom so state lines and cities read clearly.
+  const dotOpacity = t.k < 1.4 ? 1 : Math.max(0.3, 1.4 / t.k);
 
   return (
     <div className="mapgrid">
@@ -201,21 +223,47 @@ export default function MapView(props: {
               <circle cx="3" cy="3" r="1.15" fill="#9aa1a9" />
             </pattern>
             <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform={`rotate(45) scale(${dotScale})`}>
-              <rect width="2" height="6" fill="var(--accent)" opacity="0.35" />
+              <rect width="1.6" height="6" fill="var(--ink-2)" opacity="0.22" />
             </pattern>
           </defs>
 
           <g transform={t.toString()}>
-            {STATE_PATHS.map((st) => (
-              <path key={st.fips} d={st.d} fill={excluded.has(st.abbr) ? "#f7ece6" : "#eef0f2"} />
+            {STATE_PATHS.filter((st) => !(zoomed && INSETS.has(st.fips))).map((st) => (
+              <path key={st.fips} d={st.d} fill={excluded.has(st.abbr) ? "#ebebea" : "#eef0f2"} />
             ))}
-            <path d={path(NATION) ?? ""} fill="url(#dots)" />
+            <path d={zoomed ? LOWER48_D : NATION_D} fill="url(#dots)" opacity={dotOpacity} />
             {STATE_PATHS.filter((st) => excluded.has(st.abbr)).map((st) => (
               <path key={"x" + st.fips} d={st.d} fill="url(#hatch)" />
             ))}
-            <path d={path(BORDERS) ?? ""} fill="none" stroke="#c4c9cf" strokeWidth={0.8} vectorEffect="non-scaling-stroke" />
-            <path d={path(NATION) ?? ""} fill="none" stroke="#a9afb6" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+            <path d={BORDERS_D} fill="none" stroke="var(--accent)" strokeOpacity={zoomed ? 0.9 : 0.6} strokeWidth={zoomed ? 1.6 : 1} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={zoomed ? LOWER48_D : NATION_D} fill="none" stroke="var(--accent-ink)" strokeOpacity={0.75} strokeWidth={zoomed ? 1.8 : 1.3} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           </g>
+
+          {/* State abbreviations and reference cities appear in regional / zoomed views. */}
+          {zoomed && (
+            <g style={{ pointerEvents: "none" }} fontFamily="var(--mono)">
+              {STATE_PATHS.filter((st) => st.abbr && !INSETS.has(st.fips) && isFinite(st.c[0])).map((st) => {
+                const [x, y] = t.apply(st.c);
+                return (
+                  <text key={"l" + st.fips} x={x} y={y} textAnchor="middle" fontSize={13} fontWeight={600} letterSpacing="0.12em" fill="var(--accent-ink)" fillOpacity={0.32}>
+                    {st.abbr}
+                  </text>
+                );
+              })}
+              {CITIES.filter((c) => c.s !== "AK" && c.s !== "HI" && (c.t === 1 || t.k >= 3.2)).map((c) => {
+                const [x, y] = t.apply(c.p);
+                if (x < vx0 - 40 || x > vx1 + 40 || y < vy0 - 20 || y > vy1 + 20) return null;
+                return (
+                  <g key={c.n + c.s} transform={`translate(${x},${y})`}>
+                    <rect x={-2} y={-2} width={4} height={4} fill="var(--ink-3)" />
+                    <text x={6} y={3.5} fontSize={c.t === 1 ? 10.5 : 9.5} fill="var(--ink-3)" stroke="var(--surface)" strokeWidth={3} paintOrder="stroke" style={{ textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      {c.n}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          )}
 
           {/* Markers live outside the zoom group so they stay a constant size on screen. */}
           <g>
@@ -268,7 +316,7 @@ export default function MapView(props: {
             <span key={st}><StatusDot status={st} /> {st}</span>
           ))}
           {excluded.size > 0 && (
-            <span><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill="#f7ece6" /><path d="M0 12L12 0M-3 3L3 -3M9 15L15 9" stroke="var(--accent)" strokeOpacity=".6" strokeWidth="2" /></svg> Excluded</span>
+            <span><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill="#ebebea" /><path d="M0 12L12 0M-3 3L3 -3M9 15L15 9" stroke="var(--ink-2)" strokeOpacity=".35" strokeWidth="1.6" /></svg> Excluded</span>
           )}
           <span style={{ color: "var(--ink-3)" }}>● size = revenue</span>
         </div>

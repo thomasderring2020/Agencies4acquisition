@@ -169,7 +169,7 @@ export default function DetailPanel(p: Props) {
 
           <div className="cols">
             <div className="stack">
-              <section className="block">
+              <section className="block b-thesis">
                 <div className="block-h"><div className="label">Investment thesis</div></div>
                 <div className="block-b">
                   <Field label="Next diligence step" value={a.nextStep} keyField />
@@ -177,7 +177,7 @@ export default function DetailPanel(p: Props) {
                   <Field label="Key risk" value={a.risk} />
                 </div>
               </section>
-              <section className="block">
+              <section className="block b-profile">
                 <div className="block-h"><div className="label">Agency profile</div></div>
                 <div className="block-b">
                   <Field label="Business / specialty" value={a.specialty} />
@@ -185,7 +185,7 @@ export default function DetailPanel(p: Props) {
                   <Field label="Ownership" value={a.ownership} />
                 </div>
               </section>
-              <section className="block">
+              <section className="block b-basis">
                 <div className="block-h"><div className="label">Basis &amp; sources</div></div>
                 <dl className="block-b" style={{ margin: 0 }}>
                   <KV k="Revenue basis" v={a.revenueBasis} />
@@ -211,7 +211,7 @@ export default function DetailPanel(p: Props) {
                   sync(c, notes);
                 }}
               />
-              <section className="block">
+              <section className="block b-outreach">
                 <div className="block-h"><div className="label">Outreach</div></div>
                 <div className="block-b">
                   <Field label="Key decision-makers (research)" value={a.decisionMakers} />
@@ -322,7 +322,7 @@ function Contacts(props: { agencyId: string; contacts: Contact[] | null; user: s
   };
 
   return (
-    <section className="block">
+    <section className="block b-contacts">
       <div className="block-h">
         <div className="label">Contacts · {list?.length ?? "…"}</div>
         {editing !== "new" && (
@@ -439,7 +439,7 @@ function Notes(props: { agencyId: string; notes: Note[] | null; user: string; fl
   };
 
   return (
-    <section className="block">
+    <section className="block b-notes">
       <div className="block-h"><div className="label">Notes · {props.notes?.length ?? "…"}</div></div>
       <div className="block-b">
         <div style={{ padding: "12px 0", borderBottom: "1px solid var(--line-soft)" }}>

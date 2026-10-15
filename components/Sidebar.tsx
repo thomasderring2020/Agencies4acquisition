@@ -4,7 +4,7 @@ import type { Agency, StatusRecord, SyncMeta } from "@/lib/types";
 import { effectiveStatus, STATUSES } from "@/lib/types";
 import { StatusDot } from "./StatusPill";
 import type { View } from "./TrackerApp";
-import { IconList, IconMap } from "./Icons";
+import { IconClose, IconList, IconMap, IconSearch } from "./Icons";
 
 export interface Filters {
   q: string;
@@ -38,6 +38,7 @@ const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) =
 
 export default function Sidebar(props: {
   open: boolean;
+  onClose: () => void;
   view: View;
   setView: (v: View) => void;
   filters: Filters;
@@ -66,7 +67,17 @@ export default function Sidebar(props: {
       <section>
         <div className="side-title">
           [TARGETS] <span className="flag" />
+          <button className="iconbtn drawer-close" onClick={props.onClose} aria-label="Close menu"><IconClose /></button>
         </div>
+        <label className="search side-search">
+          <IconSearch />
+          <input
+            placeholder="Search agencies…"
+            value={f.q}
+            onChange={(e) => setFilters((x) => ({ ...x, q: e.target.value }))}
+            aria-label="Search agencies"
+          />
+        </label>
         <nav className="nav">
           <button className={view === "list" ? "on" : ""} onClick={() => setView("list")}>
             <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><IconList size={13} /> List</span>

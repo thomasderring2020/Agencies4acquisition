@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import type { Agency, Status, StatusRecord } from "@/lib/types";
 import { effectiveStatus, STATUSES } from "@/lib/types";
 import { midpoint, money, pad2, shortDate } from "@/lib/format";
-import StatusPill from "./StatusPill";
+import StatusPill, { StatusDot } from "./StatusPill";
 
 type SortKey = "rank" | "name" | "priority" | "revenue" | "feasibility" | "tier" | "added" | "status";
 
@@ -111,16 +111,17 @@ export default function ListView(props: {
             <table className="targets">
               <thead>
                 <tr>
-                  {th("rank", "#")}
+                  {th("rank", "#", "d-only")}
+                  {th("status", "●", "m-only mdot")}
                   {th("name", "Agency")}
-                  {th("priority", "Pri")}
-                  {th("revenue", "Revenue")}
+                  {th("priority", "Pri", "d-only")}
+                  {th("revenue", "Revenue", "rev")}
                   <th className="col-specialty">Specialty</th>
-                  {th("feasibility", "Feasibility")}
-                  {th("tier", "Market tier")}
-                  <th>Call</th>
-                  {th("added", "Added")}
-                  {th("status", "Status", "statuscol")}
+                  {th("feasibility", "Feasibility", "d-only")}
+                  {th("tier", "Market tier", "d-only")}
+                  <th className="d-only">Call</th>
+                  {th("added", "Added", "d-only")}
+                  {th("status", "Status", "statuscol d-only")}
                 </tr>
               </thead>
               <tbody>
@@ -136,7 +137,8 @@ export default function ListView(props: {
                       tabIndex={0}
                       onKeyDown={(e) => e.key === "Enter" && props.onOpen(a.id)}
                     >
-                      <td className="rank">{pad2(a.rank)}</td>
+                      <td className="rank d-only">{pad2(a.rank)}</td>
+                      <td className="m-only mdot" aria-label={st}><StatusDot status={st} /></td>
                       <td>
                         <div className="agency-name">
                           {a.name}
@@ -154,14 +156,14 @@ export default function ListView(props: {
                           {a.targetMarket ? ` · ${a.targetMarket}` : ""}
                         </div>
                       </td>
-                      <td><span className={`pri ${a.priority}`}>{a.priority || "—"}</span></td>
+                      <td className="d-only"><span className={`pri ${a.priority}`}>{a.priority || "—"}</span></td>
                       <td className="num">{money(a.revenueLow, a.revenueHigh)}</td>
                       <td className="col-specialty"><div className="clip" title={a.specialty}>{a.specialty}</div></td>
-                      <td><span className="feas"><Meter value={a.feasibility} />{a.feasibility || "—"}</span></td>
-                      <td><span className="mono" style={{ fontSize: 11.5, textTransform: "uppercase", whiteSpace: "nowrap" }} title={a.tier}>{shortTier(a.tier)}</span></td>
-                      <td>{a.sheetStatus && !/^new$/i.test(a.sheetStatus) ? <span className={`tag${/pass/i.test(a.sheetStatus) ? " dark" : ""}`}>{a.sheetStatus}</span> : <span className="muted">—</span>}</td>
-                      <td className="num" style={{ color: "var(--ink-3)" }}>{a.weekAdded ? shortDate(a.weekAdded) : "—"}</td>
-                      <td className="statuscell statuscol"><StatusPill value={st} onChange={(s) => props.onStatus(a.id, s)} /></td>
+                      <td className="d-only"><span className="feas"><Meter value={a.feasibility} />{a.feasibility || "—"}</span></td>
+                      <td className="d-only"><span className="mono" style={{ fontSize: 11.5, textTransform: "uppercase", whiteSpace: "nowrap" }} title={a.tier}>{shortTier(a.tier)}</span></td>
+                      <td className="d-only">{a.sheetStatus && !/^new$/i.test(a.sheetStatus) ? <span className={`tag${/pass/i.test(a.sheetStatus) ? " dark" : ""}`}>{a.sheetStatus}</span> : <span className="muted">—</span>}</td>
+                      <td className="num d-only" style={{ color: "var(--ink-3)" }}>{a.weekAdded ? shortDate(a.weekAdded) : "—"}</td>
+                      <td className="statuscell statuscol d-only"><StatusPill value={st} onChange={(s) => props.onStatus(a.id, s)} /></td>
                     </tr>
                   );
                 })}

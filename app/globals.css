@@ -124,7 +124,8 @@ a { color: inherit; }
   font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); text-align: left;
 }
 .nav button:hover { background: var(--surface); color: var(--ink); }
-.nav button.on { color: var(--ink); background: var(--surface); box-shadow: inset 2px 0 0 var(--accent); }
+.nav button.on { color: var(--ink); background: var(--surface); }
+.nav button.on > span:first-child { color: var(--accent-ink); }
 .nav .count { color: var(--ink-4); font-size: 11px; }
 .group-label { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 .group-label button { border: 0; background: none; padding: 0; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -155,7 +156,9 @@ a { color: inherit; }
 .dot.lost { box-shadow: inset 0 0 0 1.5px var(--st-lost); background: transparent !important; }
 
 /* ---------- Main ---------- */
-.main { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.main > * { flex: none; }
+.main > .tablecard, .main > .mapgrid { flex: 1 1 auto; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); position: relative; }
 .plus::before, .plus::after {
   content: "+"; position: absolute; font: 300 14px/1 var(--mono); color: var(--ink-4); pointer-events: none;
@@ -186,7 +189,7 @@ table.targets { width: 100%; border-collapse: collapse; min-width: 980px; }
 .targets td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
 .targets tbody tr { cursor: pointer; transition: background 0.12s; }
 .targets tbody tr:hover { background: var(--raised); }
-.targets tbody tr.sel { background: var(--accent-wash); box-shadow: inset 2px 0 0 var(--accent); }
+.targets tbody tr.sel { background: var(--accent-wash); }
 .targets tr.dim td:not(.statuscell) { opacity: 0.55; }
 .targets .statuscol { position: sticky; right: 0; background: var(--panel); box-shadow: -12px 0 12px -10px rgba(23,25,28,0.12); z-index: 1; }
 .targets th.statuscol { z-index: 2; }
@@ -334,7 +337,7 @@ table.targets { width: 100%; border-collapse: collapse; min-width: 980px; }
 .field:last-child { border-bottom: 0; }
 .field .label { margin-bottom: 5px; }
 .field p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.55; }
-.field.key { border-left: 2px solid var(--accent); padding-left: 14px; margin-left: -16px; }
+.field.key { background: var(--accent-wash); border: 1px solid #f8d3c3; border-radius: var(--radius); padding: 12px 14px; margin: 12px 0 4px; }
 .field.key .label { color: var(--accent-ink); }
 .field a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--ink-4); text-underline-offset: 2px; word-break: break-all; }
 .field a:hover { text-decoration-color: var(--accent); }
@@ -375,6 +378,7 @@ textarea.input-area { height: auto; min-height: 72px; padding: 9px 10px; resize:
 
 /* ---------- Map ---------- */
 .mapgrid { display: grid; grid-template-columns: 1fr 300px; gap: 8px; min-height: 0; }
+.m-only { display: none; }
 .mapcard { overflow: hidden; min-height: 0; background: var(--surface); }
 .mapcard svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
 .mapcard svg:active { cursor: grabbing; }
@@ -425,6 +429,33 @@ textarea.input-area { height: auto; min-height: 72px; padding: 9px 10px; resize:
 .login-card h1 { margin: 10px 0 4px; font-size: 24px; letter-spacing: -0.02em; }
 .login-dots { position: absolute; inset: 0; opacity: 0.9; background-image: radial-gradient(var(--ink-4) 1px, transparent 1.2px); background-size: 9px 9px; mask-image: radial-gradient(70% 60% at 50% 60%, #000 10%, transparent 75%); }
 
+/* ---------- Greeting ---------- */
+.greeting { display: flex; align-items: center; gap: 20px; padding: 20px 24px; overflow: hidden; isolation: isolate; }
+.greeting-art {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(240, 83, 28, 0.55) 1.1px, transparent 1.5px) 0 0 / 12px 12px,
+    linear-gradient(rgba(240, 83, 28, 0.10) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(240, 83, 28, 0.10) 1px, transparent 1px) 0 0 / 48px 48px;
+  -webkit-mask-image: linear-gradient(100deg, transparent 38%, rgba(0,0,0,0.35) 62%, #000 100%);
+  mask-image: linear-gradient(100deg, transparent 38%, rgba(0,0,0,0.35) 62%, #000 100%);
+}
+.greeting-art::after {
+  /* a few registration marks on the grid */
+  content: "+   +"; position: absolute; right: 54px; top: 14px; font: 300 14px/1 var(--mono); color: var(--accent); opacity: 0.6; white-space: pre; letter-spacing: 34px;
+}
+.greeting-body { flex: 1; min-width: 0; }
+.greeting h1 { margin: 8px 0 4px; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
+.greeting h1 .accent { color: var(--accent); }
+.greeting p { margin: 0; color: var(--ink-2); font-size: 14px; }
+.greeting-sync { color: var(--ink-4); }
+.greeting-cta { flex: none; height: 34px; background: rgba(255,255,255,0.9); }
+.greeting-cta.accent { background: var(--accent); }
+
+/* ---------- Mobile drawer ---------- */
+.drawer-close, .side-search { display: none !important; }
+.drawer-back { display: none; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1599px) {
   .col-specialty { display: none; }
@@ -440,16 +471,74 @@ textarea.input-area { height: auto; min-height: 72px; padding: 9px 10px; resize:
   body { overflow: auto; }
   .shell { height: auto; min-height: 100vh; }
   .body { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
-  .sidebar.open { display: flex; }
+  .topbar { position: sticky; top: 0; z-index: 20; }
+  .shell { padding-top: 0; }
+  .shell > .topbar { margin-top: 8px; }
+  .sidebar {
+    position: fixed; z-index: 71; top: 0; left: 0; bottom: 0; width: min(320px, 86vw);
+    border-radius: 0; border-width: 0 1px 0 0; box-shadow: 20px 0 50px rgba(23,25,28,0.18);
+    transform: translateX(-105%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1); visibility: hidden;
+  }
+  .sidebar.open { transform: none; visibility: visible; }
+  .drawer-back { display: block; position: fixed; inset: 0; z-index: 70; background: rgba(230,232,235,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade 0.2s both; }
+  body.drawer-open { overflow: hidden; }
+  .drawer-close { display: inline-grid !important; width: 32px; height: 32px; }
+  .side-search { display: flex !important; width: 100%; margin-top: 14px; height: 36px; }
   .filters-toggle { display: inline-flex; }
-  .syncinfo, .search { display: none; }
+  .syncinfo, .topbar .search { display: none; }
+
+  /* List: page scrolls (no nested scroll areas), status as a dot left of the name */
+  .tablecard { overflow: visible; }
+  .tablewrap { overflow: visible; max-height: none; }
+  table.targets { min-width: 0; }
+  .targets th { top: 46px; }
+  .d-only { display: none; }
+  .m-only { display: table-cell; }
+  table.targets { table-layout: fixed; width: 100%; }
+  .targets th.rev { width: 118px; }
+  .agency-sub { max-width: 100%; }
+  .targets .mdot { width: 34px; padding-left: 14px; padding-right: 0; text-align: center; }
+  .targets .mdot .dot { width: 10px; height: 10px; }
+  .targets td.num { text-align: right; padding-right: 14px; }
+  .targets th.rev { text-align: right; padding-right: 14px; }
+  .agency-name { flex-wrap: wrap; row-gap: 4px; }
+  .tablehead .label:last-child { display: none; }
+
+  .greeting { padding: 18px 16px; flex-direction: column; align-items: flex-start; gap: 14px; }
+  .greeting h1 { font-size: 24px; }
+  .greeting-art { -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%); mask-image: linear-gradient(160deg, transparent 30%, #000 100%); }
+  .greeting-art::after { right: 18px; letter-spacing: 20px; }
+
+  /* Detail panel on phones: status → numbers → contacts → profile → basis → outreach → notes → thesis */
+  .cols { display: flex; flex-direction: column; gap: 20px; }
+  .cols > .stack { display: contents; }
+  .b-contacts { order: 1; }
+  .b-profile { order: 2; }
+  .b-basis { order: 3; }
+  .b-outreach { order: 4; }
+  .b-notes { order: 5; }
+  .b-thesis { order: 6; }
   .kpis { grid-template-columns: repeat(3, 1fr); }
   .kpi:nth-child(n+4) { display: none; }
-  .tablecard { max-height: none; }
-  .tablewrap { max-height: 70vh; }
   .mapgrid { grid-template-columns: 1fr; }
-  .mapcard { height: 60vh; }
+  /* Map on phones: region chips scroll sideways above the map, legend sits below it */
+  .mapcard { height: auto; display: flex; flex-direction: column; }
+  .mapcard svg { height: auto; aspect-ratio: 975 / 610; }
+  .map-regions { position: static; flex-wrap: nowrap; overflow-x: auto; padding: 10px; gap: 6px; scrollbar-width: none; border-bottom: 1px solid var(--line-soft); }
+  .map-regions::-webkit-scrollbar { display: none; }
+  .map-regions button { flex: none; height: 30px; }
+  .map-zoom { top: 60px; right: 10px; }
+  .map-hud { display: none; }
+  .map-legend { position: static; margin: 0; border-width: 1px 0 0; border-radius: 0; background: var(--panel); gap: 8px 14px; }
+  /* Detail panel scrolls as one page so the header doesn't eat half the screen */
+  .panel { display: block; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .panel-scroll { overflow: visible; }
+  .panel-head { padding-top: 14px; padding-bottom: 14px; }
+  .fin { grid-template-columns: 1fr 1fr; }
+  .fin > div, .fin > div:nth-child(3) { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+  .fin > div:nth-child(odd) { border-right: 1px solid var(--line-soft); }
+  .fin > div:nth-last-child(-n+2) { border-bottom: 0; }
+  .links { gap: 6px; }
   .inview { max-height: 50vh; }
   .panel { width: 100vw; }
   .glass-hint { display: none; }

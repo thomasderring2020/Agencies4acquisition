@@ -17,3 +17,4 @@ export const IconFilter = ({ size }: P) => (<svg {...base(size)}><path d="M2.5 3
 export const IconPhone = ({ size }: P) => (<svg {...base(size)}><path d="M4 2.5h2.2l1 3-1.5 1a7 7 0 0 0 3.8 3.8l1-1.5 3 1V12a1.5 1.5 0 0 1-1.6 1.5A10.5 10.5 0 0 1 2.5 4.1 1.5 1.5 0 0 1 4 2.5Z" /></svg>);
 export const IconMail = ({ size }: P) => (<svg {...base(size)}><rect x="2" y="3.5" width="12" height="9" rx="1" /><path d="m2.5 4.5 5.5 4.2 5.5-4.2" /></svg>);
 export const IconMinus = ({ size }: P) => (<svg {...base(size)}><path d="M3 8h10" /></svg>);
+export const IconMenu = ({ size }: P) => (<svg {...base(size)}><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" /></svg>);

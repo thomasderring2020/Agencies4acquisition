@@ -7,7 +7,8 @@ import { relTime } from "@/lib/format";
 import Sidebar, { type Filters, EMPTY_FILTERS } from "./Sidebar";
 import ListView from "./ListView";
 import DetailPanel from "./DetailPanel";
-import { IconFilter, IconSearch, IconSync, IconUpload } from "./Icons";
+import { IconMenu, IconSearch, IconSync, IconUpload } from "./Icons";
+import Greeting from "./Greeting";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false, loading: () => <div className="card mapcard" /> });
 
@@ -89,6 +90,10 @@ export default function TrackerApp() {
       document.removeEventListener("visibilitychange", onFocus);
     };
   }, [load]);
+
+  useEffect(() => {
+    document.body.classList.toggle("drawer-open", filtersOpen);
+  }, [filtersOpen]);
 
   useEffect(() => {
     try {
@@ -216,8 +221,8 @@ export default function TrackerApp() {
   return (
     <div className="shell">
       <header className="topbar">
-        <button className="iconbtn filters-toggle" aria-label="Filters" onClick={() => setFiltersOpen((o) => !o)}>
-          <IconFilter />
+        <button className="iconbtn filters-toggle" aria-label="Open menu" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
+          <IconMenu />
         </button>
         <div className="crumbs">
           <span className="hide-sm">M&amp;A Watch</span>
@@ -262,8 +267,10 @@ export default function TrackerApp() {
       </header>
 
       <div className="body">
+        {filtersOpen && <div className="drawer-back" onClick={() => setFiltersOpen(false)} aria-hidden />}
         <Sidebar
           open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
           view={view}
           setView={(v) => {
             setView(v);
@@ -278,7 +285,7 @@ export default function TrackerApp() {
           meta={meta}
         />
 
-        <main className="main" style={view === "map" ? { gridTemplateRows: "1fr" } : undefined}>
+        <main className="main">
           {data?.storage === "local" && process.env.NODE_ENV === "production" && (
             <div className="banner">Database not connected — changes won&apos;t be saved. Add Upstash Redis in Vercel (see README).</div>
           )}
@@ -301,6 +308,16 @@ export default function TrackerApp() {
               </div>
             </div>
           ) : view === "list" ? (
+            <>
+            <Greeting
+              user={user}
+              agencies={agencies}
+              statuses={statuses}
+              latestWeek={latestWeek}
+              meta={meta}
+              newOnly={filters.newOnly}
+              onToggleNew={() => setFilters((f) => ({ ...f, newOnly: !f.newOnly }))}
+            />
             <ListView
               rows={filtered}
               all={agencies}
@@ -312,6 +329,7 @@ export default function TrackerApp() {
               onOpen={setSelected}
               onStatus={setStatus}
             />
+            </>
           ) : (
             <MapView rows={filtered} statuses={statuses} excluded={excluded} selected={selected} onOpen={setSelected} />
           )}
